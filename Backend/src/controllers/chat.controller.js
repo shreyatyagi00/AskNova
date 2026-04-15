@@ -16,30 +16,43 @@ export async function sendMessage(req, res) {
         })
     }
 
+    const currentChatId = chatId || chat._id;
+
      const userMessage = await messageModel.create({
-        chat:chatId || chat._id,
+        chat:currentChatId,
         content: message,
         role: "user"
     })
 
-    
+      const messageCount = await messageModel.countDocuments({
+        chat: currentChatId
+    })
 
-    const messages = await messageModel.find({ chat: chatId  || chat._id })
+    if (messageCount === 1) {
+        const newTitle = await generateChatTitle(message)
+
+        await chatModel.findByIdAndUpdate(currentChatId, {
+            title: newTitle
+        })
+    }
+
+    const messages = await messageModel
+    .find({ chat: currentChatId })
+    .sort({ createdAt: 1 })
 
     const result = await generateResponse(messages);
 
     const aiMessage = await messageModel.create({
-        chat: chatId || chat._id,
+    chat: currentChatId,
         content: result,
         role: "ai"
     })
     
 
     res.status(201).json({
-        title,
-        chat,
-        aiMessage
-    });
+    chatId: currentChatId,
+    aiMessage
+});
 }
 
 export async function getChats(req, res) {
@@ -99,4 +112,23 @@ export async function deleteChat(req, res) {
     res.status(200).json({
         message: "Chat deleted successfully"
     })
+}
+
+export async function createChat(req, res) {
+    try {
+        const chat = await chatModel.create({
+            user: req.user.id,
+            title: "New Chat"
+        });
+
+        res.status(201).json({
+            chat
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Error creating chat"
+        });
+    }
 }

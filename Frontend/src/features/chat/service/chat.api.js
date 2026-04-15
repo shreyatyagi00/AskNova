@@ -25,3 +25,8 @@ export const deleteChat = async (chatId) => {
     const response = await api.delete(`/api/chats/delete/${chatId}`)
     return response.data
 }
+
+export const createChat = async () => {
+    const response = await api.post("/api/chats")
+    return response.data
+}

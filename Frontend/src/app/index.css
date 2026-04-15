@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+body {
+  overflow: hidden;
+}
+
 .messages::-webkit-scrollbar {
     display: none;
+}
+
+.messages {
+  -ms-overflow-style: none;  /* IE */
+  scrollbar-width: none;     /* Firefox */
 }
