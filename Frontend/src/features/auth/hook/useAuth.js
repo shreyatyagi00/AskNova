@@ -19,17 +19,23 @@ export function useAuth() {
         }
     }
 
-    async function handleLogin({ email, password }) {
-        try {
-            dispatch(setLoading(true))
-            const data = await login({ email, password })
-            dispatch(setUser(data.user))
-        } catch (err) {
-            dispatch(setError(err.response?.data?.message || "Login failed"))
-        } finally {
-            dispatch(setLoading(false))
-        }
+  async function handleLogin({ email, password }) {
+    try {
+        dispatch(setLoading(true))
+
+        await login({ email, password })   // cookie set
+
+        // 👇 actual user fetch karo
+        const data = await getMe()
+
+        dispatch(setUser(data.user))
+
+    } catch (err) {
+        dispatch(setError(err.response?.data?.message || "Login failed"))
+    } finally {
+        dispatch(setLoading(false))
     }
+}
 
     async function handleGetMe() {
         try {
