@@ -7,33 +7,20 @@ import cors from "cors";
 
 const app = express();
 
-// Middlewares
+// ✅ CORS FIRST
+app.use(cors({
+  origin: true,
+  credentials: true,
+}));
+app.options("*", cors());
+
+// middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan("dev"));
 
-// ✅ FIXED CORS
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://ask-nova-xi.vercel.app"
-];
-
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true,
-}));
-
-// ✅ IMPORTANT (preflight fix)
-app.options("*", cors());
-
-// Routes
+// routes
 app.get("/", (req, res) => {
   res.json({ message: "Server is running" });
 });
