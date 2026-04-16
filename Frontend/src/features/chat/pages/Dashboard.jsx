@@ -113,64 +113,84 @@ const Dashboard = () => {
         </button>
 
         <div className="space-y-2">
-          {Object.values(chats).map(chatItem => (
-            <button
-              key={chatItem.id}
-              onClick={() => openChat(chatItem.id)}
-              className="w-full text-left px-3 py-2 rounded-lg 
-              hover:bg-blue-500/20 transition"
-            >
-              {chatItem.title || "New Chat"}
-            </button>
-          ))}
+          {Object.values(chats)
+            .slice()
+            .reverse()
+            .map((chatItem, index, arr) => (
+              <div key={chatItem.id} className="relative group">
+
+                <button
+                  onClick={() => openChat(chatItem.id)}
+                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-blue-500/20 transition"
+                >
+                  {chatItem.title || "New Chat"}
+                </button>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    const prevChat = arr[index + 1]
+                    const prevChatId = prevChat?.id || null
+                    chat.handleDeleteChat(chatItem.id, prevChatId)
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 
+                             opacity-0 group-hover:opacity-100 
+                             text-red-400 hover:text-red-600 transition text-sm"
+                >
+                  🗑
+                </button>
+
+              </div>
+            ))}
         </div>
       </aside>
 
       {/* MAIN */}
       <section className="flex-1 flex flex-col max-w-4xl mx-auto relative">
 
-        {/* CHAT */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4 pb-32 chat-scroll">
 
-          {chats[currentChatId]?.messages.map((message, index) => (
-            <div
-              key={index}
-              className={`flex ${
-                message.role === "user" ? "justify-end" : "justify-start"
-              }`}
-            >
-              <div
-                className={`max-w-[75%] px-4 py-3 rounded-2xl text-sm ${
+          {/* ✅ EMPTY STATE */}
+          {!currentChatId || !chats[currentChatId]?.messages.length ? (
+            <div className="h-full flex items-start justify-center text-center pt-32">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-500 mb-2">
+                   Ask anything✨
+                </h2>
+                <p className="text-gray-500">
+                  AI will answer it like a pro 
+                </p>
+              </div>
+            </div>
+          ) : (
+            chats[currentChatId]?.messages.map((message, index) => (
+              <div key={index}
+                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+                <div className={`max-w-[75%] px-4 py-3 rounded-2xl text-sm ${
                   message.role === "user"
                     ? "bg-blue-600 text-white"
                     : "bg-[#0f172a] text-gray-200 border border-gray-700"
-                }`}
-              >
-                {message.role === "user" ? (
-                  <p>{message.content}</p>
-                ) : (
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {message.content}
-                  </ReactMarkdown>
-                )}
+                }`}>
+                  {message.role === "user" ? (
+                    <p>{message.content}</p>
+                  ) : (
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {message.content}
+                    </ReactMarkdown>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
 
           {isLoading && <p className="text-gray-400">Thinking...</p>}
           <div ref={bottomRef} />
         </div>
 
-        {/* INPUT */}
         <footer className="absolute bottom-5 left-1/2 -translate-x-1/2 w-full max-w-3xl">
-
-          <form
-            onSubmit={handleSubmitMessage}
-            className="flex items-center gap-3 
-            bg-gradient-to-r from-[#0a1a3a] to-[#07122a]
-            border border-blue-900/40
-            rounded-full px-5 py-3 shadow-lg backdrop-blur"
-          >
+          <form onSubmit={handleSubmitMessage}
+            className="flex items-center gap-3 bg-gradient-to-r from-[#0a1a3a] to-[#07122a]
+            border border-blue-900/40 rounded-full px-5 py-3 shadow-lg backdrop-blur">
 
             <input
               value={chatInput}
@@ -179,13 +199,8 @@ const Dashboard = () => {
               className="flex-1 bg-transparent outline-none text-sm"
             />
 
-            <button type="button" onClick={handleVoiceInput} className="text-xl">
-              🎤
-            </button>
-
-            <button type="submit" className="bg-blue-600 px-4 py-2 rounded-full">
-              ➤
-            </button>
+            <button type="button" onClick={handleVoiceInput}>🎤</button>
+            <button type="submit" className="bg-blue-600 px-4 py-2 rounded-full">➤</button>
 
           </form>
         </footer>

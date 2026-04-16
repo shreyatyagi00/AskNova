@@ -27,6 +27,15 @@ const chatSlice = createSlice({
 
             state.chats[chatId].messages.push({ content, role })
         },
+        deleteChatLocal: (state, action) => {
+    const chatId = action.payload;
+
+    delete state.chats[chatId];
+
+    if (state.currentChatId === chatId) {
+        state.currentChatId = null;
+    }
+},
 
         addMessages: (state, action) => {
             const { chatId, messages } = action.payload
@@ -70,7 +79,8 @@ export const {
     setError,
     createNewChat,
     addNewMessage,
-    addMessages
+    addMessages,
+    deleteChatLocal
 } = chatSlice.actions
 
 export default chatSlice.reducer

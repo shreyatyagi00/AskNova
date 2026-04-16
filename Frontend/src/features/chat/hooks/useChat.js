@@ -1,5 +1,5 @@
 import { initializeSocketConnection } from "../service/chat.socket";
-import { sendMessage, getChats, getMessages, createChat } from "../service/chat.api";
+import { sendMessage, getChats, getMessages, createChat, deleteChat } from "../service/chat.api";
 import {
   setChats,
   setCurrentChatId,
@@ -7,7 +7,8 @@ import {
   setLoading,
   createNewChat,
   addNewMessage,
-  addMessages
+  addMessages,
+  deleteChatLocal
 } from "../chat.slice";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -26,35 +27,28 @@ export const useChat = () => {
 
       const finalChatId = chatId || newChatId
 
-      // ✅ NEW CHAT CREATE IN REDUX
       if (!chatId) {
         dispatch(createNewChat({
           chatId: newChatId,
-          title: "" // temporary until backend updates
+          title: ""
         }))
       }
 
-      // ✅ USER MESSAGE
       dispatch(addNewMessage({
         chatId: finalChatId,
         content: message,
         role: "user",
       }))
 
-      // 🤖 AI MESSAGE
       dispatch(addNewMessage({
         chatId: finalChatId,
         content: aiMessage.content,
         role: aiMessage.role,
       }))
 
-      // ✅ SET CURRENT CHAT
       dispatch(setCurrentChatId(finalChatId))
-
-      // 🔥 SAVE FOR RELOAD FIX
       localStorage.setItem("lastChatId", finalChatId)
 
-      // 🔥 REFRESH CHAT LIST (title update)
       await handleGetChats()
 
     } catch (error) {
@@ -77,7 +71,6 @@ export const useChat = () => {
           acc[chat._id] = {
             id: chat._id,
             title: chat.title,
-            // 🔥 PRESERVE EXISTING MESSAGES
             messages: chatsState[chat._id]?.messages || [],
             lastUpdated: chat.updatedAt,
           }
@@ -95,10 +88,8 @@ export const useChat = () => {
   // 📂 OPEN CHAT
   async function handleOpenChat(chatId, chats) {
     try {
-      // 🔥 SAVE CURRENT CHAT
       localStorage.setItem("lastChatId", chatId)
 
-      // 🔥 LOAD ONLY IF EMPTY
       if (chats[chatId]?.messages.length === 0) {
         const data = await getMessages(chatId)
         const { messages } = data
@@ -135,8 +126,6 @@ export const useChat = () => {
       }))
 
       dispatch(setCurrentChatId(chat._id))
-
-      // 🔥 SAVE NEW CHAT
       localStorage.setItem("lastChatId", chat._id)
 
     } catch (error) {
@@ -146,11 +135,50 @@ export const useChat = () => {
     }
   }
 
+  // 🗑 DELETE CHAT (FINAL FIXED)
+  async function handleDeleteChat(chatId) {
+    try {
+      dispatch(setLoading(true));
+
+      // 🔥 backend delete
+      await deleteChat(chatId);
+
+      // 🔥 get ordered chats (same as UI)
+      const orderedChats = Object.values(chatsState)
+        .slice()
+        .reverse();
+
+      // 🔥 find current index
+      const index = orderedChats.findIndex(c => c.id === chatId);
+
+      // 🔥 previous chat (UI ke hisaab se)
+      const prevChatId = orderedChats[index + 1]?.id || null;
+
+      // 🔥 redux remove
+      dispatch(deleteChatLocal(chatId));
+
+      // 🔥 open previous chat
+      if (prevChatId) {
+        dispatch(setCurrentChatId(prevChatId));
+        localStorage.setItem("lastChatId", prevChatId);
+      } else {
+        dispatch(setCurrentChatId(null));
+        localStorage.removeItem("lastChatId");
+      }
+
+    } catch (error) {
+      dispatch(setError("Failed to delete chat"));
+    } finally {
+      dispatch(setLoading(false));
+    }
+  }
+
   return {
     initializeSocketConnection,
     handleSendMessage,
     handleGetChats,
     handleOpenChat,
-    handleCreateChat
+    handleCreateChat,
+    handleDeleteChat
   }
 }
