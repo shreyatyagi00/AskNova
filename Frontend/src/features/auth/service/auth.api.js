@@ -1,5 +1,5 @@
 import axios from 'axios'
-
+ 
 
 const api = axios.create({
     baseURL: "https://asknova-su5s.onrender.com",
@@ -17,6 +17,8 @@ export async function login({ email, password }) {
 }
 
 export async function getMe() {
-    const response = await api.get("/api/auth/get-me")
-    return response.data
+    const response = await api.get("/api/auth/get-me", {
+        withCredentials: true // ✅ explicitly add
+    });
+    return response.data;
 }
